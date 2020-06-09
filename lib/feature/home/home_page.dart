@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
         child: Stack(
           children: <Widget>[
             Visibility(
-              visible: !_isLoading,
+              visible: !_isLoading && _joke != null,
               child: Text(
                 _joke?.value ?? '',
                 textAlign: TextAlign.center,
