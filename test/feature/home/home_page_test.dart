@@ -4,6 +4,7 @@ import 'package:flutternetworking/app.dart';
 
 void main() {
   // TODO: provide mock repository
+  // TODO: test error handling
   testWidgets('Load joke', (WidgetTester tester) async {
     await tester.pumpWidget(App());
 
