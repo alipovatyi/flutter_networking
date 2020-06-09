@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutternetworking/data/model/models.dart';
 import 'package:flutternetworking/data/remote/repository/joke_remote_repository.dart';
 import 'package:flutternetworking/data/repository/joke_repository.dart';
+import 'package:toast/toast.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({Key key, this.title}) : super(key: key);
@@ -23,11 +24,25 @@ class _HomePageState extends State<HomePage> {
       _isLoading = true;
       _joke = null;
     });
-    final joke = await _jokeRepository.getRandomJoke();
+    await _jokeRepository
+        .getRandomJoke()
+        .then(_showJoke)
+        .catchError((e) => _showError(e));
+  }
+
+  void _showJoke(Joke joke) {
     setState(() {
       _isLoading = false;
       _joke = joke;
     });
+  }
+
+  void _showError(Error error) {
+    setState(() {
+      _isLoading = false;
+    });
+    Toast.show(error.toString(), context,
+        duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
   }
 
   @override
@@ -61,4 +76,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-
