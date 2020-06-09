@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutternetworking/data/model/models.dart';
+import 'package:flutternetworking/data/remote/repository/joke_remote_repository.dart';
+import 'package:flutternetworking/data/repository/joke_repository.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({Key key, this.title}) : super(key: key);
@@ -11,6 +13,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final _jokeRepository = JokeRepository(JokeRemoteRepository());
+
   bool _isLoading = false;
   Joke _joke;
 
@@ -19,9 +23,10 @@ class _HomePageState extends State<HomePage> {
       _isLoading = true;
       _joke = null;
     });
-    // TODO: load random joke
+    final joke = await _jokeRepository.getRandomJoke();
     setState(() {
       _isLoading = false;
+      _joke = joke;
     });
   }
 
