@@ -52,6 +52,7 @@ class _HomePageState extends State<HomePage> {
         title: Text(widget.title),
       ),
       body: Container(
+        padding: EdgeInsets.all(16),
         alignment: Alignment.center,
         child: Stack(
           children: <Widget>[
