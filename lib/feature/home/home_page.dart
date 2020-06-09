@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutternetworking/data/model/models.dart';
+import 'package:flutternetworking/data/remote/api_client.dart';
 import 'package:flutternetworking/data/remote/repository/joke_remote_repository.dart';
 import 'package:flutternetworking/data/repository/joke_repository.dart';
+import 'package:http/http.dart' as http;
 import 'package:toast/toast.dart';
 
 class HomePage extends StatefulWidget {
@@ -14,7 +16,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final _jokeRepository = JokeRepository(JokeRemoteRepository());
+  final _jokeRepository = JokeRepository(
+    JokeRemoteRepository(
+      ApiClient(
+        http.Client(),
+        'https://api.chucknorris.io',
+      ),
+    ),
+  );
 
   bool _isLoading = false;
   Joke _joke;
