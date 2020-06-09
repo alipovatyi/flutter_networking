@@ -5,8 +5,11 @@ part 'joke_dto.g.dart';
 
 @JsonSerializable()
 class JokeDto extends Equatable {
-  JokeDto(this.id, this.value, this.iconUrl);
+  JokeDto(this.id, this.value, this.iconUrl)
+      : assert(id != null),
+        assert(value != null);
 
+  @JsonKey(required: true)
   final String id;
   @JsonKey(required: true)
   final String value;
