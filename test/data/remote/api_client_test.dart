@@ -25,7 +25,7 @@ void main() {
     final apiClient = ApiClient(client, 'base.url');
     test('sends GET request', () async {
       final givenResponse = createResponse(body: '{}');
-      when(client.get('base.url/path')).thenAnswer((_) => givenResponse);
+      when(client.get('base.url/path')).thenAnswer((_) async => givenResponse);
       final response = await apiClient.get('path');
       expect(response.statusCode, equals(HttpStatus.ok));
       expect(response.body, equals('{}'));

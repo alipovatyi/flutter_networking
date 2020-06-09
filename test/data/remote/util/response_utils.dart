@@ -2,7 +2,12 @@ import 'dart:io';
 
 import 'package:http/http.dart';
 
-Future<Response> createResponse({String body, String fileName, int statusCode = HttpStatus.ok}) async {
+Response createResponse({
+  String body,
+  String fileName,
+  int statusCode = HttpStatus.ok
+}) {
   assert(body != null || fileName != null);
-  return Response(body ?? await File(fileName).readAsString(), statusCode);
+  final path = '../test_resources/$fileName';
+  return Response(body ?? File(path).readAsStringSync(), statusCode);
 }
