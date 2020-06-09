@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutternetworking/data/remote/dto/joke_dto.dart';
 
 class Joke extends Equatable {
-  Joke(this.value, this.iconUrl) : assert(value != null);
+  const Joke(this.value, this.iconUrl) : assert(value != null);
 
   final String value;
   final String iconUrl;

@@ -4,6 +4,8 @@ class JokeRemoteRepository {
 
   Future<JokeDto> getRandomJoke() async {
     // TODO: replace with valid implementation
-    return JokeDto('', '', '');
+    final duration = const Duration(seconds: 1);
+    final jokeDto = const JokeDto('id', 'Test joke', null);
+    return Future.delayed(duration, () => jokeDto);
   }
 }
