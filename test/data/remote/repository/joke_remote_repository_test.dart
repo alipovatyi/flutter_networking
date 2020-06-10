@@ -26,7 +26,7 @@ void main() {
       when(apiClient.get('/jokes/random')).thenAnswer((_) async => response);
       expect(await repository.getRandomJoke(), equals(createJokeDto()));
     });
-    test('returns JokeDto if response is valid', () async {
+    test('throws an exception if response invalid', () async {
       final response = createResponse(body: '{}');
       when(apiClient.get('/jokes/random')).thenAnswer((_) async => response);
       expect(() => repository.getRandomJoke(), throwsException);
