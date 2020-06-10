@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutternetworking/data/model/models.dart';
-import 'package:flutternetworking/data/remote/repository/joke_remote_repository.dart';
 import 'package:flutternetworking/data/repository/joke_repository.dart';
 import 'package:toast/toast.dart';
 
 class HomePage extends StatefulWidget {
-  HomePage({Key key, this.title}) : super(key: key);
+  HomePage({Key key, this.title, this.jokeRepository}) : super(key: key);
 
   final String title;
+  final JokeRepository jokeRepository;
 
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  final _jokeRepository = JokeRepository(JokeRemoteRepository());
-
   bool _isLoading = false;
   Joke _joke;
 
@@ -24,7 +22,7 @@ class _HomePageState extends State<HomePage> {
       _isLoading = true;
       _joke = null;
     });
-    await _jokeRepository
+    await widget.jokeRepository
         .getRandomJoke()
         .then(_showJoke)
         .catchError((e) => _showError(e));
@@ -37,12 +35,16 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _showError(Error error) {
+  void _showError(Exception error) {
     setState(() {
       _isLoading = false;
     });
-    Toast.show(error.toString(), context,
-        duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
+    Toast.show(
+      'Oops, something went wrong...',
+      context,
+      duration: Toast.LENGTH_LONG,
+      gravity: Toast.BOTTOM,
+    );
   }
 
   @override
