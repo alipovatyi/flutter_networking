@@ -1,11 +1,10 @@
 import 'package:flutternetworking/data/remote/dto/joke_dto.dart';
+import 'package:flutternetworking/data/remote/service/joke_service.dart';
 
 class JokeRemoteRepository {
+  JokeRemoteRepository(this._jokeService) : assert(_jokeService != null);
 
-  Future<JokeDto> getRandomJoke() async {
-    // TODO: replace with valid implementation
-    final duration = const Duration(seconds: 1);
-    final jokeDto = const JokeDto('id', 'Test joke', null);
-    return Future.delayed(duration, () => jokeDto);
-  }
+  final JokeService _jokeService;
+
+  Future<JokeDto> getRandomJoke() async => await _jokeService.getRandomJoke();
 }
