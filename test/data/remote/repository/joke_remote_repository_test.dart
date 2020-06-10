@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutternetworking/data/remote/dto/joke_dto.dart';
 import 'package:flutternetworking/data/remote/repository/joke_remote_repository.dart';
 import 'package:flutternetworking/data/remote/service/joke_service.dart';
 import 'package:mockito/mockito.dart';
@@ -20,16 +21,12 @@ void main() {
   group('getRandomJoke', () {
     final service = MockJokeService();
     final repository = JokeRemoteRepository(service);
+    final mapper = (json) => JokeDto.fromJson(json);
     test('returns JokeDto if response is valid', () async {
-      final responseFileName = 'joke/response/random_joke.json';
-      final response = createChopperResponse(fileName: responseFileName);
+      final path = 'joke/response/random_joke.json';
+      final response = createChopperResponse<JokeDto>(fileName: path, mapper: mapper);
       when(service.getRandomJoke()).thenAnswer((_) async => response);
       expect(await repository.getRandomJoke(), equals(createJokeDto()));
-    });
-    test('throws an exception if response is invalid', () async {
-      final response = createChopperResponse(body: '{}');
-      when(service.getRandomJoke()).thenAnswer((_) async => response);
-      expect(() => repository.getRandomJoke(), throwsException);
     });
   });
 }

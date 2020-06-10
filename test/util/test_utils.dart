@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:chopper/chopper.dart';
@@ -11,16 +12,18 @@ Widget buildTestableWidget(Widget widget) {
   );
 }
 
-Response createChopperResponse({
+Response<T> createChopperResponse<T>({
   String body,
   String fileName,
+  Function mapper,
   int statusCode = HttpStatus.ok
 }) {
   assert(body != null || fileName != null);
   final path = '../test_resources/$fileName';
   final bodyString = body ?? File(path).readAsStringSync();
   final response = createHttpResponse(body: bodyString, statusCode: statusCode);
-  return Response(response, bodyString);
+  final mapped = mapper?.call(jsonDecode(bodyString)) ?? jsonDecode(bodyString);
+  return Response<T>(response, mapped);
 }
 
 http.Response createHttpResponse({
