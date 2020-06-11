@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart';
 import 'package:mockito/mockito.dart';
 
 Widget buildTestableWidget(Widget widget) {
@@ -12,14 +15,25 @@ Widget buildTestableWidget(Widget widget) {
   );
 }
 
+final testResourcesDirectory = join(
+  Directory.current.path,
+  Directory.current.path.endsWith('test') ? '..' : '',
+  'test_resources',
+);
+
+String readTestResource(String fileName) {
+  assert(fileName != null);
+  final path = '$testResourcesDirectory/$fileName';
+  return File(path).readAsStringSync();
+}
+
 Response<Map<String, dynamic>> createHttpResponse({
   String body,
   String fileName,
   int statusCode = HttpStatus.ok,
 }) {
   assert(body != null || fileName != null);
-  final path = './test_resources/$fileName';
-  final bodyString = body ?? File(path).readAsStringSync();
+  final bodyString = body ?? readTestResource(fileName);
   return Response(data: jsonDecode(bodyString), statusCode: statusCode);
 }
 
