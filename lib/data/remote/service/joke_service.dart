@@ -6,7 +6,7 @@ part 'joke_service.g.dart';
 
 @RestApi()
 abstract class JokeService {
-  factory JokeService(Dio dio, {String baseUrl}) = _JokeService;
+  factory JokeService(Dio dio) = _JokeService;
 
   @GET("jokes/random")
   Future<JokeDto> getRandomJoke();

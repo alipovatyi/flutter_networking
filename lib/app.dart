@@ -10,6 +10,7 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    _dio.options.baseUrl = 'https://api.chucknorris.io/';
     _dio.interceptors.add(LogInterceptor(responseBody: false));
     return MaterialApp(
       title: 'Flutter Demo',
@@ -19,14 +20,7 @@ class App extends StatelessWidget {
       ),
       home: HomePage(
         title: 'Chuck Norris',
-        jokeRepository: JokeRepository(
-          JokeRemoteRepository(
-            JokeService(
-              _dio,
-              baseUrl: 'https://api.chucknorris.io/',
-            ),
-          ),
-        ),
+        jokeRepository: JokeRepository(JokeRemoteRepository(JokeService(_dio))),
       ),
     );
   }
