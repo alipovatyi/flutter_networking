@@ -2,12 +2,13 @@ import 'dart:io';
 
 import 'package:http/http.dart';
 
+import '../../../util/test_utils.dart';
+
 Response createResponse({
   String body,
   String fileName,
-  int statusCode = HttpStatus.ok
+  int statusCode = HttpStatus.ok,
 }) {
   assert(body != null || fileName != null);
-  final path = '../test_resources/$fileName';
-  return Response(body ?? File(path).readAsStringSync(), statusCode);
+  return Response(body ?? readTestResource(fileName), statusCode);
 }
