@@ -10,6 +10,9 @@ A Flutter application repository for comparing [http](https://pub.dev/packages/h
     - `flutter pub run build_runner watch` automatically rebuilds app on each code change
  3. Run the app on device or emulator/simulator
 
+## Testing
+Run `flutter test`
+
 ## Branches
 
 `master` - base implementation with mocked offline response
