@@ -20,8 +20,7 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
       c.name = '_${element.name}';
       c.implements.add(refer(element.name));
       c.fields.addAll([
-        _createFinalField('_client', 'Client'),
-        _createFinalField('baseUrl', 'String'),
+        _createFinalField('_client', 'RestClient'),
       ]);
       c.methods.addAll(_generateMethods(path, methods));
       c.constructors.add(_generateConstructor());
@@ -36,26 +35,33 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
     final returnType = _genericOf(element.returnType);
     final name = element.name;
     final methodAnnotation = _getMethodAnnotation(element);
+    final methodBodyParamName = _getMethodBodyParamName(element);
     final methodName = methodAnnotation.peek('name').stringValue;
     final methodPath = methodAnnotation.peek('path').stringValue;
     final headers = _getHeadersAnnotation(element).peek('headers').mapValue;
     final headersJson = _generateHeaders(headers);
     return Method((b) {
       final body = Code('''
-        final url = baseUrl + '/${_createUrl([path, methodPath])}';
+        final url = _client.baseUrl + '/${_createUrl([path, methodPath])}';
         final method = '$methodName';
         final headers = $headersJson;
         final request = Request(method, Uri.parse(url));
         request.headers.addEntries(headers.entries);
+        request.body = ${methodBodyParamName != null ? 'jsonEncode($methodBodyParamName)' : "''"};
         final response = await _client.send(request);
-        final body = await response.stream.bytesToString();
-        return $returnType.fromJson(jsonDecode(body));
+        final responseBody = await response.stream.bytesToString();
+        return $returnType.fromJson(jsonDecode(responseBody));
       ''');
       b.annotations.add(CodeExpression(Code('override')));
       b.name = name;
       b.modifier = MethodModifier.async;
       b.body = body;
-      b.requiredParameters.addAll([]);
+      b.requiredParameters.addAll(element.parameters.map(
+        (e) => Parameter((p) {
+          p.name = methodBodyParamName;
+          p.type = refer(e.type.toString()).type;
+        }),
+      ));
     });
   }
 
@@ -78,7 +84,6 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
   _generateConstructor() {
     return Constructor((c) {
       c.requiredParameters.add(_generateParameter('_client', false));
-      c.optionalParameters.add(_generateParameter('baseUrl', true));
     });
   }
 
@@ -96,8 +101,7 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
 
   _getMethodAnnotation(MethodElement element) {
     for (final type in _methodAnnotations) {
-      final annotation = _typeChecker(type)
-          .firstAnnotationOf(element, throwOnUnresolved: false);
+      final annotation = _getAnnotation(element, type);
       if (annotation != null) {
         return ConstantReader(annotation);
       }
@@ -105,14 +109,25 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
     return null;
   }
 
+  _getMethodBodyParamName(MethodElement element) => element
+      .parameters
+      .firstWhere((e) => _hasAnnotation(e, Body), orElse: () => null)
+      ?.name;
+
   _getHeadersAnnotation(MethodElement element) {
-    final annotation = _typeChecker(Headers)
-        .firstAnnotationOf(element, throwOnUnresolved: false);
+    final annotation = _getAnnotation(element, Headers);
     if (annotation != null) {
       return ConstantReader(annotation);
     }
     return null;
   }
+
+  _getAnnotation(Element element, dynamic annotation) =>
+      _typeChecker(annotation)
+          .firstAnnotationOf(element, throwOnUnresolved: false);
+
+  _hasAnnotation(Element element, dynamic annotation) =>
+      _getAnnotation(element, annotation) != null;
 
   TypeChecker _typeChecker(Type type) => TypeChecker.fromRuntime(type);
 

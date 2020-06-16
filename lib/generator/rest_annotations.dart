@@ -30,3 +30,7 @@ class Headers {
 
   const Headers(this.headers) : assert(headers != null);
 }
+
+class Body {
+  const Body();
+}
