@@ -1,0 +1,15 @@
+targets:
+  $default:
+    builders:
+      flutternetworking|rest_builder:
+        enabled: true
+
+builders:
+  rest_builder:
+    target: ":todo_reporter_generator"
+    import: 'package:flutternetworking/generator/rest_builder.dart'
+    builder_factories: ['restBuilder']
+    build_extensions: { '.dart': ['.rest.g.dart'] }
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: ["source_gen|combining_builder"]
