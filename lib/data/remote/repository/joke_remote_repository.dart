@@ -1,16 +1,10 @@
-import 'dart:convert';
-
-import 'package:flutternetworking/data/remote/api_client.dart';
 import 'package:flutternetworking/data/remote/dto/joke_dto.dart';
+import 'package:flutternetworking/data/remote/service/joke_service.dart';
 
 class JokeRemoteRepository {
-  JokeRemoteRepository(this._apiClient) : assert(_apiClient != null);
+  JokeRemoteRepository(this._service) : assert(_service != null);
 
-  final ApiClient _apiClient;
+  final JokeService _service;
 
-  Future<JokeDto> getRandomJoke() async {
-    final response = await _apiClient.get('/jokes/random');
-    final json = jsonDecode(response.body);
-    return JokeDto.fromJson(json);
-  }
+  Future<JokeDto> getRandomJoke() async => await _service.getRandomJoke();
 }

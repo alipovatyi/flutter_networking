@@ -1,11 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:flutternetworking/data/remote/api_client.dart';
 import 'package:flutternetworking/data/remote/repository/joke_remote_repository.dart';
+import 'package:flutternetworking/data/remote/rest_client.dart';
+import 'package:flutternetworking/data/remote/service/joke_service.dart';
 import 'package:flutternetworking/data/repository/joke_repository.dart';
 import 'package:flutternetworking/feature/home/home_page.dart';
-import 'package:http/http.dart' as http;
 
 class App extends StatelessWidget {
+  final _restClient = RestClient(
+    baseUrl: 'https://chuck.free.beeceptor.com',
+    defaultHeaders: {},
+    requestInterceptors: [
+      (req) {
+        print('--> ${req.method} ${req.url}');
+        print('--> Headers: ${req.headers}');
+        print('--> Body: ${req.body}');
+      }
+    ],
+    responseInterceptors: [
+      (res) {
+        print('<-- Status code: ${res.statusCode}');
+        print('<-- ${res.body}');
+      }
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -18,10 +36,7 @@ class App extends StatelessWidget {
         title: 'Chuck Norris',
         jokeRepository: JokeRepository(
           JokeRemoteRepository(
-            ApiClient(
-              http.Client(),
-              'https://api.chucknorris.io',
-            ),
+            JokeService(_restClient),
           ),
         ),
       ),
