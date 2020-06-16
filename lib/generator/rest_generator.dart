@@ -49,8 +49,7 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
         request.headers.addEntries(headers.entries);
         request.body = ${methodBodyParamName != null ? 'jsonEncode($methodBodyParamName)' : "''"};
         final response = await _client.send(request);
-        final responseBody = await response.stream.bytesToString();
-        return $returnType.fromJson(jsonDecode(responseBody));
+        return $returnType.fromJson(jsonDecode(response.body));
       ''');
       b.annotations.add(CodeExpression(Code('override')));
       b.name = name;
