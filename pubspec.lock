@@ -388,7 +388,7 @@ packages:
     source: sdk
     version: "0.0.99"
   source_gen:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: source_gen
       url: "https://pub.dartlang.org"
