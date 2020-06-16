@@ -19,9 +19,9 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
     final cl = Class((c) {
       c.name = '_${element.name}';
       c.implements.add(refer(element.name));
-      c.fields.addAll([
+      c.fields.add(
         _createFinalField('_client', 'RestClient'),
-      ]);
+      );
       c.methods.addAll(_generateMethods(path, methods));
       c.constructors.add(_generateConstructor());
     });
@@ -35,21 +35,24 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
     final returnType = _genericOf(element.returnType);
     final name = element.name;
     final methodAnnotation = _getMethodAnnotation(element);
-    final methodBodyParamName = _getMethodBodyParamName(element);
-    final methodName = methodAnnotation.peek('name').stringValue;
-    final methodPath = methodAnnotation.peek('path').stringValue;
+    final bodyParamName = _getMethodParamName(element, Body);
+    final requestMethod = methodAnnotation.peek('name').stringValue;
+    final requestPath = methodAnnotation.peek('path').stringValue;
     final headers = _getHeadersAnnotation(element).peek('headers').mapValue;
-    final headersJson = _generateHeaders(headers);
+    final headersMap = _generateHeaders(headers);
+    final urlParamName = _getMethodParamName(element, Url);
+    final url = urlParamName == null
+        ? "_client.baseUrl + '/${_createUrl([path, requestPath])}'"
+        : urlParamName;
+    final requestBody =
+        bodyParamName != null ? 'jsonEncode($bodyParamName)' : "''";
     return Method((b) {
       final body = Code('''
-        final url = _client.baseUrl + '/${_createUrl([path, methodPath])}';
-        final method = '$methodName';
-        final headers = $headersJson;
-        final request = Request(method, Uri.parse(url));
-        request.headers.addEntries(headers.entries);
-        request.body = ${methodBodyParamName != null ? 'jsonEncode($methodBodyParamName)' : "''"};
-        final response = await _client.send(request);
-        return $returnType.fromJson(jsonDecode(response.body));
+        final _request = Request('$requestMethod', Uri.parse($url));
+        _request.headers.addEntries($headersMap.entries);
+        _request.body = $requestBody;
+        final _response = await _client.send(_request);
+        return $returnType.fromJson(jsonDecode(_response.body));
       ''');
       b.annotations.add(CodeExpression(Code('override')));
       b.name = name;
@@ -57,7 +60,7 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
       b.body = body;
       b.requiredParameters.addAll(element.parameters.map(
         (e) => Parameter((p) {
-          p.name = methodBodyParamName;
+          p.name = e.name;
           p.type = refer(e.type.toString()).type;
         }),
       ));
@@ -108,11 +111,6 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
     return null;
   }
 
-  _getMethodBodyParamName(MethodElement element) => element
-      .parameters
-      .firstWhere((e) => _hasAnnotation(e, Body), orElse: () => null)
-      ?.name;
-
   _getHeadersAnnotation(MethodElement element) {
     final annotation = _getAnnotation(element, Headers);
     if (annotation != null) {
@@ -127,6 +125,11 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
 
   _hasAnnotation(Element element, dynamic annotation) =>
       _getAnnotation(element, annotation) != null;
+
+  _getMethodParamName(MethodElement element, dynamic annotation) =>
+      element.parameters
+          .firstWhere((e) => _hasAnnotation(e, annotation), orElse: () => null)
+          ?.name;
 
   TypeChecker _typeChecker(Type type) => TypeChecker.fromRuntime(type);
 

@@ -34,3 +34,7 @@ class Headers {
 class Body {
   const Body();
 }
+
+class Url {
+  const Url();
+}
