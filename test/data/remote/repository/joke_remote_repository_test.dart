@@ -1,35 +1,28 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutternetworking/data/remote/api_client.dart';
 import 'package:flutternetworking/data/remote/repository/joke_remote_repository.dart';
+import 'package:flutternetworking/data/remote/service/joke_service.dart';
 import 'package:mockito/mockito.dart';
 
 import '../../../fake_data/dto/joke_dto_fake_data.dart';
-import '../util/response_utils.dart';
 
-class MockApiClient extends Mock implements ApiClient {}
+class MockJokeService extends Mock implements JokeService {}
 
 void main() {
   group('assertion', () {
     test('does not assert if not null', () {
-      expect(() => JokeRemoteRepository(MockApiClient()), returnsNormally);
+      expect(() => JokeRemoteRepository(MockJokeService()), returnsNormally);
     });
     test('asserts if null', () {
       expect(() => JokeRemoteRepository(null), throwsAssertionError);
     });
   });
   group('getRandomJoke', () {
-    final apiClient = MockApiClient();
-    final repository = JokeRemoteRepository(apiClient);
+    final service = MockJokeService();
+    final repository = JokeRemoteRepository(service);
     test('returns JokeDto if response is valid', () async {
-      final responseFileName = 'joke/response/random_joke.json';
-      final response = createResponse(fileName: responseFileName);
-      when(apiClient.get('/jokes/random')).thenAnswer((_) async => response);
-      expect(await repository.getRandomJoke(), equals(createJokeDto()));
-    });
-    test('throws an exception if response invalid', () async {
-      final response = createResponse(body: '{}');
-      when(apiClient.get('/jokes/random')).thenAnswer((_) async => response);
-      expect(() => repository.getRandomJoke(), throwsException);
+      final dto = createJokeDto();
+      when(service.getRandomJoke()).thenAnswer((_) async => dto);
+      expect(await repository.getRandomJoke(), equals(dto));
     });
   });
 }
