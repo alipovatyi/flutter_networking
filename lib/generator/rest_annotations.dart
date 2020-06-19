@@ -44,3 +44,9 @@ class Path {
 
   const Path(this.value) : assert(value != null);
 }
+
+class Query {
+  final String name;
+
+  const Query(this.name) : assert(name != null);
+}
