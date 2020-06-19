@@ -5,5 +5,5 @@ Map<String, dynamic> createJokeJson({
 }) => {
   'id': id,
   'value': value,
-  'icon_url': iconUrl
+  'icon_url': iconUrl,
 };

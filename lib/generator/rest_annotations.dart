@@ -5,12 +5,12 @@ class ApiService {
 }
 
 abstract class RestMethod {
+  final String name;
+  final String path;
+
   const RestMethod(this.name, this.path)
       : assert(name != null),
         assert(path != null);
-
-  final String name;
-  final String path;
 }
 
 class GET extends RestMethod {
@@ -37,4 +37,10 @@ class Body {
 
 class Url {
   const Url();
+}
+
+class Path {
+  final String value;
+
+  const Path(this.value) : assert(value != null);
 }
