@@ -21,7 +21,7 @@ void main() {
     final repository = JokeRemoteRepository(service);
     test('returns JokeDto if response is valid', () async {
       final dto = createJokeDto();
-      when(service.getRandomJoke()).thenAnswer((_) async => dto);
+      when(service.getRandomJoke1()).thenAnswer((_) async => dto);
       expect(await repository.getRandomJoke(), equals(dto));
     });
   });

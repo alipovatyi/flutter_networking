@@ -7,64 +7,168 @@ import 'package:flutternetworking/generator/rest_annotations.dart';
 import 'package:source_gen/source_gen.dart';
 
 class RestGenerator extends GeneratorForAnnotation<ApiService> {
+  final _methodAnnotations = const [GET, POST, PUT];
+
   @override
   generateForAnnotatedElement(
     Element element,
     ConstantReader annotation,
     BuildStep buildStep,
   ) {
-    final path = annotation.peek('path').stringValue;
-    final methods = (element as ClassElement).methods;
-
+    final baseUrl = _parseBaseUrl(annotation);
     final cl = Class((c) {
       c.name = '_${element.name}';
       c.implements.add(refer(element.name));
-      c.fields.add(
-        _createFinalField('_client', 'RestClient'),
-      );
-      c.methods.addAll(_generateMethods(path, methods));
+      c.fields.add(_createFinalField('_client', 'RestClient'));
+      c.methods.addAll(_generateMethods(element as ClassElement, baseUrl));
       c.constructors.add(_generateConstructor());
     });
 
     return DartFormatter().format('${cl.accept(DartEmitter())}');
   }
 
-  final _methodAnnotations = const [GET, POST, PUT];
+  List<Method> _generateMethods(ClassElement element, String baseUrl) =>
+      element.methods
+          .map((e) => _generateMethod(_getMethod(e), baseUrl))
+          .toList();
 
-  Method _generateRequestMethod(MethodElement element, String path) {
-    final returnType = _genericOf(element.returnType);
+  _MethodToGenerate _getMethod(MethodElement element) {
     final name = element.name;
-    final methodAnnotation = _getMethodAnnotation(element);
-    final bodyParamName = _getMethodParamName(element, Body);
-    final requestMethod = methodAnnotation.peek('name').stringValue;
-    final requestPath = methodAnnotation.peek('path').stringValue;
-    final headers = _getHeadersAnnotation(element).peek('headers').mapValue;
-    final headersMap = _generateHeaders(headers);
-    final urlParamName = _getMethodParamName(element, Url);
-    final url = urlParamName == null
-        ? "_client.baseUrl + '/${_createUrl([path, requestPath])}'"
-        : urlParamName;
-    final requestBody =
-        bodyParamName != null ? 'jsonEncode($bodyParamName)' : "''";
-    return Method((b) {
-      final body = Code('''
-        final _request = Request('$requestMethod', Uri.parse($url));
-        _request.headers.addEntries($headersMap.entries);
-        _request.body = $requestBody;
-        final _response = await _client.send(_request);
-        return $returnType.fromJson(jsonDecode(_response.body));
-      ''');
-      b.annotations.add(CodeExpression(Code('override')));
-      b.name = name;
-      b.modifier = MethodModifier.async;
-      b.body = body;
-      b.requiredParameters.addAll(element.parameters.map(
-        (e) => Parameter((p) {
-          p.name = e.name;
-          p.type = refer(e.type.toString()).type;
-        }),
-      ));
+    final returnType = _genericOf(element.returnType);
+    final parameters = _generateMethodParameters(element);
+    final restMethod = _parseRestMethod(element);
+    final headers = _parseHeaders(element);
+    final url = _parseUrlParameter(element);
+    final pathParams = _parsePathParameters(element);
+    final queryParams = _parseQueryParameters(element);
+    final body = _parseBodyParameter(element);
+    return _MethodToGenerate(name, returnType, parameters, restMethod, headers,
+        url, pathParams, queryParams, body);
+  }
+
+  Method _generateMethod(_MethodToGenerate element, String baseUrl) {
+    final returnType = element.returnType;
+    final methodType = element.restMethod.type;
+    final headers = element.headers;
+    final urlParam = element.url?.parameterName;
+    final pathParameters = element.pathParameters;
+    final queryParameters = element.queryParameters;
+    final requestBody = element.body != null
+        ? 'jsonEncode(${element.body.parameterName})'
+        : null;
+    var servicePath = '';
+    if (baseUrl != null && baseUrl.isNotEmpty) {
+      servicePath = '$baseUrl/';
+    }
+    final block = Block.of([
+      if (urlParam == null) Code("""
+      var _url = '\${_client.baseUrl}/$servicePath' + '${element.restMethod.path}';"""),
+      if (urlParam == null && pathParameters.isNotEmpty) Code("""
+      final _pathParameters = $pathParameters;
+      _pathParameters.forEach((k, v) => _url = _url.replaceFirst('{\$k}', v));"""),
+      if (urlParam != null) Code("""var _url = $urlParam;"""),
+      Code('var _uri = Uri.parse(_url);'),
+      if (urlParam == null && queryParameters.isNotEmpty) Code("""
+      final _queryParameters = $queryParameters;
+      _uri = _uri.replace(queryParameters: _queryParameters);"""),
+      Code("final _request = Request('$methodType', _uri);"),
+      if (headers.isNotEmpty) Code("""
+      final _headers = $headers;
+      _request.headers.addEntries(_headers.entries);"""),
+      if (requestBody != null) Code("_request.body = $requestBody;"),
+      Code("final _response = await _client.send(_request);"),
+      Code("return $returnType.fromJson(jsonDecode(_response.body));"),
+    ]);
+    final method = Method((m) {
+      m.annotations.add(CodeExpression(Code('override')));
+      m.name = element.name;
+      m.requiredParameters.addAll(element.parameters);
+      m.modifier = MethodModifier.async;
+      m.body = block;
     });
+    return method;
+  }
+
+  String _parseBaseUrl(ConstantReader annotation) =>
+      annotation.peek('path').stringValue;
+
+  _RestMethod _parseRestMethod(MethodElement element) {
+    for (final type in _methodAnnotations) {
+      final annotation = _getAnnotation(element, type);
+      if (annotation != null) {
+        final reader = ConstantReader(annotation);
+        final method = reader.peek('name').stringValue;
+        final path = reader.peek('path').stringValue;
+        return _RestMethod(method, path);
+      }
+    }
+    return null;
+  }
+
+  _Url _parseUrlParameter(MethodElement element) {
+    var url;
+    element.parameters.forEach((param) {
+      if (_getAnnotation(param, Url) != null) {
+        url = _Url(param.name);
+      }
+    });
+    return url;
+  }
+
+  _Body _parseBodyParameter(MethodElement element) {
+    var body;
+    element.parameters.forEach((param) {
+      if (_getAnnotation(param, Body) != null) {
+        body = _Body(param.name);
+      }
+    });
+    return body;
+  }
+
+  Map _parsePathParameters(MethodElement element) {
+    final map = {};
+    element.parameters.forEach((param) {
+      final annotation = _getAnnotation(param, Path);
+      if (annotation == null) return;
+      final reader = ConstantReader(annotation);
+      final name = reader.peek('value').stringValue;
+      map.putIfAbsent(literal(name), () => param.name);
+    });
+    return map;
+  }
+
+  Map<dynamic, dynamic> _parseQueryParameters(MethodElement element) {
+    final map = {};
+    element.parameters.forEach((param) {
+      final annotation = _getAnnotation(param, Query);
+      if (annotation == null) return;
+      final reader = ConstantReader(annotation);
+      final name = reader.peek('name').stringValue;
+      map.putIfAbsent(literal(name), () => param.name);
+    });
+    return map;
+  }
+
+  Map<dynamic, dynamic> _parseHeaders(MethodElement element) {
+    final annotation = _getAnnotation(element, Headers);
+    if (annotation == null) return {};
+    final reader = ConstantReader(annotation);
+    final map = <dynamic, dynamic>{};
+    reader.peek('headers').mapValue.forEach((k, v) {
+      map[literal(k.toStringValue())] = literal(v.toStringValue());
+    });
+    return map;
+  }
+
+  _generateMethodParameters(MethodElement element) {
+    return element.parameters
+        .map(
+          (e) => Parameter((p) {
+            p.name = e.name;
+            p.type = refer(e.type.toString()).type;
+          }),
+        )
+        .toList();
   }
 
   _createFinalField(String name, String type) {
@@ -89,56 +193,60 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
     });
   }
 
-  _generateMethods(String path, List<MethodElement> methods) {
-    return methods.map((element) => _generateRequestMethod(element, path));
-  }
-
-  _generateHeaders(Map<dynamic, dynamic> headers) {
-    final map = {};
-    headers.forEach((k, v) {
-      map[literal(k.toStringValue())] = literal(v.toStringValue());
-    });
-    return map;
-  }
-
-  _getMethodAnnotation(MethodElement element) {
-    for (final type in _methodAnnotations) {
-      final annotation = _getAnnotation(element, type);
-      if (annotation != null) {
-        return ConstantReader(annotation);
-      }
-    }
-    return null;
-  }
-
-  _getHeadersAnnotation(MethodElement element) {
-    final annotation = _getAnnotation(element, Headers);
-    if (annotation != null) {
-      return ConstantReader(annotation);
-    }
-    return null;
-  }
-
   _getAnnotation(Element element, dynamic annotation) =>
       _typeChecker(annotation)
           .firstAnnotationOf(element, throwOnUnresolved: false);
 
-  _hasAnnotation(Element element, dynamic annotation) =>
-      _getAnnotation(element, annotation) != null;
-
-  _getMethodParamName(MethodElement element, dynamic annotation) =>
-      element.parameters
-          .firstWhere((e) => _hasAnnotation(e, annotation), orElse: () => null)
-          ?.name;
-
   TypeChecker _typeChecker(Type type) => TypeChecker.fromRuntime(type);
-
-  String _createUrl(Iterable<String> parts) =>
-      parts.where((element) => element.isNotEmpty).join('/');
 
   DartType _genericOf(DartType type) {
     return type is InterfaceType && type.typeArguments.isNotEmpty
         ? type.typeArguments.first
         : null;
   }
+}
+
+class _MethodToGenerate {
+  final String name;
+  final DartType returnType;
+  final List<Parameter> parameters;
+  final _RestMethod restMethod;
+  final Map<dynamic, dynamic> headers;
+  final _Url url;
+  final Map<dynamic, dynamic> pathParameters;
+  final Map<dynamic, dynamic> queryParameters;
+  final _Body body;
+
+  const _MethodToGenerate(
+    this.name,
+    this.returnType,
+    this.parameters,
+    this.restMethod,
+    this.headers,
+    this.url,
+    this.pathParameters,
+    this.queryParameters,
+    this.body,
+  );
+}
+
+class _RestMethod {
+  final String type;
+  final String path;
+
+  const _RestMethod(this.type, this.path);
+}
+
+abstract class _Parameter {
+  final String parameterName;
+
+  const _Parameter(this.parameterName);
+}
+
+class _Url extends _Parameter {
+  const _Url(String parameterName) : super(parameterName);
+}
+
+class _Body extends _Parameter {
+  const _Body(String parameterName) : super(parameterName);
 }

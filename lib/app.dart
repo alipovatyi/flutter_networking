@@ -7,7 +7,7 @@ import 'package:flutternetworking/feature/home/home_page.dart';
 
 class App extends StatelessWidget {
   final _restClient = RestClient(
-    baseUrl: 'https://chuck.free.beeceptor.com',
+    baseUrl: 'https://api.chucknorris.io',
     defaultHeaders: {},
     requestInterceptors: [
       (req) {

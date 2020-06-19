@@ -6,5 +6,5 @@ class JokeRemoteRepository {
 
   final JokeService _service;
 
-  Future<JokeDto> getRandomJoke() async => await _service.getRandomJoke();
+  Future<JokeDto> getRandomJoke() async => await _service.getRandomJoke1();
 }
