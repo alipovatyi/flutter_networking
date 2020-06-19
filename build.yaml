@@ -6,7 +6,6 @@ targets:
 
 builders:
   rest_builder:
-    target: ":todo_reporter_generator"
     import: 'package:flutternetworking/generator/rest_builder.dart'
     builder_factories: ['restBuilder']
     build_extensions: { '.dart': ['.rest.g.dart'] }
