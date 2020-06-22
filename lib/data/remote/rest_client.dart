@@ -1,7 +1,12 @@
 import 'package:http/http.dart';
 
-typedef RequestInterceptor = Function(Request request);
-typedef ResponseInterceptor = Function(Response response);
+abstract class RequestInterceptor {
+  Request intercept(Request request);
+}
+
+abstract class ResponseInterceptor {
+  Response intercept(Response response);
+}
 
 class RestClient {
   RestClient({
@@ -24,10 +29,10 @@ class RestClient {
 
   Future<Response> send(Request request) async {
     request.headers.addAll(_defaultHeaders);
-    _requestInterceptors.forEach((interceptor) => interceptor(request));
+    _requestInterceptors.forEach((i) => i.intercept(request));
     final streamedResponse = await _client.send(request);
     final response = await Response.fromStream(streamedResponse);
-    _responseInterceptors.forEach((interceptor) => interceptor(response));
+    _responseInterceptors.forEach((i) => i.intercept(response));
     return response;
   }
 }
