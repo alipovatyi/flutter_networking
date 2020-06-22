@@ -11,18 +11,18 @@ part 'joke_service.g.dart';
 abstract class JokeService {
   factory JokeService(RestClient client) = _JokeService;
 
-  @GET('random')
+  @GET(path: 'random')
   Future<JokeDto> getRandomJoke1();
 
-  @GET('random')
+  @GET(path: 'random')
   @Headers({"Content-Type": "application/json"})
   Future<JokeDto> getRandomJoke2(@Query('query1') String query1);
 
-  @POST('random')
+  @POST(path: 'random')
   @Headers({"Content-Type": "application/json"})
   Future<JokeDto> getRandomJoke3(@Body() JokeDto body);
 
-  @GET('random/{path1}/test/{path2}')
+  @GET(path: 'random/{path1}/test/{path2}')
   Future<JokeDto> getRandomJoke4(
     @Url() String url,
     @Query('query1') String query1,
@@ -31,21 +31,27 @@ abstract class JokeService {
     @Path('path2') String path2,
   );
 
-  @PUT('random/{path1}/test/{path2}')
+  @PUT(path: 'random/{path1}/test/{path2}')
   Future<JokeDto> getRandomJoke5(
     @Path('path1') String path1,
     @Path('path2') String path2,
   );
 
-  @PUT('random')
+  @PUT(path: 'random')
   Future<JokeDto> getRandomJoke6(
     @Query('query1') String query1,
     @Query('query2') String query2,
   );
 
-  @PUT('random')
+  @PUT(path: 'random')
   Future<JokeDto> getRandomJoke7(
     @Path('path1') String path1,
     @Query('query1') String query1,
   );
+
+  @GET()
+  Future<JokeDto> getRandomJoke8(@Query('') String q, {@Url() String url = 'random'});
+
+  @GET(path: 'random')
+  Future<JokeDto> getRandomJoke9({@Url() String url = 'https://google.com'});
 }

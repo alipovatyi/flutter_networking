@@ -61,12 +61,17 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
       servicePath = '$baseUrl/';
     }
     final block = Block.of([
-      if (urlParam == null) Code("""
+      Code("""
       var _url = '\${_client.baseUrl}/$servicePath' + '${element.restMethod.path}';"""),
+      if (urlParam != null) Code("""
+      if ($urlParam.startsWith(RegExp('https?://'))) {
+        _url = $urlParam;
+      } else {
+        _url = _url + '/\$$urlParam';
+      }"""),
       if (urlParam == null && pathParameters.isNotEmpty) Code("""
       final _pathParameters = $pathParameters;
       _pathParameters.forEach((k, v) => _url = _url.replaceFirst('{\$k}', v));"""),
-      if (urlParam != null) Code("""var _url = $urlParam;"""),
       Code('var _uri = Uri.parse(_url);'),
       if (urlParam == null && queryParameters.isNotEmpty) Code("""
       final _queryParameters = $queryParameters;
@@ -165,7 +170,9 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
         .map(
           (e) => Parameter((p) {
             p.name = e.name;
+            p.named = e.isNamed;
             p.type = refer(e.type.toString()).type;
+            p.defaultTo = Code(e.defaultValueCode);
           }),
         )
         .toList();
