@@ -1,9 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutternetworking/data/remote/dto/joke_dto.dart';
 import 'package:flutternetworking/data/remote/rest_client.dart';
-import 'package:flutternetworking/generator/rest_annotations.dart';
-import 'package:http/http.dart';
+import 'package:flutternetworking/generator/rest_service.dart';
 
 part 'joke_service.g.dart';
 
@@ -50,7 +47,10 @@ abstract class JokeService {
   );
 
   @GET()
-  Future<JokeDto> getRandomJoke8(@Query('') String q, {@Url() String url = 'random'});
+  Future<JokeDto> getRandomJoke8(
+    @Query('query') String query, {
+    @Url() String url = 'random',
+  });
 
   @GET(path: 'random')
   Future<JokeDto> getRandomJoke9({@Url() String url = 'https://google.com'});

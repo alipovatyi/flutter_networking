@@ -57,31 +57,23 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
     final requestBody = element.body != null
         ? 'jsonEncode(${element.body.parameterName})'
         : null;
-    var path = '';
-    if (servicePath != null && servicePath.isNotEmpty) {
-      path = '/$servicePath';
-    }
-    if (methodPath != null && methodPath.isNotEmpty) {
-      path = path + '/$methodPath';
-    }
     final block = Block.of([
-      Code("var _url = '\${_client.baseUrl}$path';"),
-      if (urlParam != null) Code("""
-      _url = $urlParam.startsWith(RegExp('https?://')) ? $urlParam : '\$_url/\$$urlParam';"""),
-      if (urlParam == null && pathParameters.isNotEmpty) Code("""
-      final _pathParameters = $pathParameters;
-      _pathParameters.forEach((k, v) => _url = _url.replaceFirst('{\$k}', v));"""),
-      Code('var _uri = Uri.parse(_url);'),
-      if (urlParam == null && queryParameters.isNotEmpty) Code("""
-      final _queryParameters = $queryParameters;
-      _uri = _uri.replace(queryParameters: _queryParameters);"""),
-      Code("final _request = Request('$methodType', _uri);"),
-      if (headers.isNotEmpty) Code("""
-      final _headers = $headers;
-      _request.headers.addEntries(_headers.entries);"""),
-      if (requestBody != null) Code("_request.body = $requestBody;"),
-      Code("final _response = await _client.send(_request);"),
-      Code("return $returnType.fromJson(jsonDecode(_response.body));"),
+      Code("""
+      final _request = \$createRequest(
+        method: '$methodType',
+        uri: \$createUri(
+          baseUrl: _client.baseUrl,
+          servicePath: '$servicePath',
+          methodPath: '$methodPath',
+          urlParam: $urlParam,
+          pathParameters: $pathParameters,
+          queryParameters: $queryParameters,
+        ),
+        headers: $headers,
+        body: $requestBody,
+      );"""),
+      Code("final response = await _client.send(_request);"),
+      Code("return $returnType.fromJson(jsonDecode(response.body));"),
     ]);
     final method = Method((m) {
       m.annotations.add(CodeExpression(Code('override')));
@@ -165,7 +157,7 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
     return map;
   }
 
-  _generateMethodParameters(MethodElement element) {
+  List<Parameter> _generateMethodParameters(MethodElement element) {
     return element.parameters
         .map(
           (e) => Parameter((p) {
@@ -178,7 +170,7 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
         .toList();
   }
 
-  _createFinalField(String name, String type) {
+  Field _createFinalField(String name, String type) {
     return Field((f) {
       f.name = name;
       f.modifier = FieldModifier.final$;
@@ -186,7 +178,7 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
     });
   }
 
-  _generateParameter(String name, bool named) {
+  Parameter _generateParameter(String name, bool named) {
     return Parameter((p) {
       p.name = name;
       p.named = named;
@@ -194,7 +186,7 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
     });
   }
 
-  _generateConstructor() {
+  Constructor _generateConstructor() {
     return Constructor((c) {
       c.requiredParameters.add(_generateParameter('_client', false));
     });
