@@ -36,6 +36,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showError(Object error) {
+    print(error);
     setState(() {
       _isLoading = false;
     });

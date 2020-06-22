@@ -19,16 +19,15 @@ Uri $createUri({
   if (methodPath != null && methodPath.isNotEmpty) {
     url = '$url/$methodPath';
   }
-  if (urlParam != null) {
+  if (urlParam != null && urlParam.isNotEmpty) {
     url = _$shouldOverrideUrl(urlParam) ? urlParam : '$url/$urlParam';
-    return Uri.parse(url);
-  } else {
-    var uri = Uri.parse(url);
-    if (queryParameters.isNotEmpty) {
-      uri = uri.replace(queryParameters: queryParameters);
-    }
-    return uri;
   }
+  pathParameters.forEach((k, v) => url = url.replaceFirst('{$k}', '$v'));
+  var uri = Uri.parse(url);
+  if (queryParameters.isNotEmpty) {
+    uri = uri.replace(queryParameters: queryParameters);
+  }
+  return uri;
 }
 
 Request $createRequest({
@@ -42,7 +41,7 @@ Request $createRequest({
   if (body != null) {
     request.body = body;
   }
-  return Request(method, uri);
+  return request;
 }
 
 makeRequest(RestClient client, Request request, dynamic type) async {
