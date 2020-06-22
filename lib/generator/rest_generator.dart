@@ -15,21 +15,21 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
     ConstantReader annotation,
     BuildStep buildStep,
   ) {
-    final baseUrl = _parseBaseUrl(annotation);
+    final servicePath = _parseServicePath(annotation);
     final cl = Class((c) {
       c.name = '_${element.name}';
       c.implements.add(refer(element.name));
       c.fields.add(_createFinalField('_client', 'RestClient'));
-      c.methods.addAll(_generateMethods(element as ClassElement, baseUrl));
+      c.methods.addAll(_generateMethods(element as ClassElement, servicePath));
       c.constructors.add(_generateConstructor());
     });
 
     return DartFormatter().format('${cl.accept(DartEmitter())}');
   }
 
-  List<Method> _generateMethods(ClassElement element, String baseUrl) =>
+  List<Method> _generateMethods(ClassElement element, String servicePath) =>
       element.methods
-          .map((e) => _generateMethod(_getMethod(e), baseUrl))
+          .map((e) => _generateMethod(_getMethod(e), servicePath))
           .toList();
 
   _MethodToGenerate _getMethod(MethodElement element) {
@@ -46,9 +46,10 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
         url, pathParams, queryParams, body);
   }
 
-  Method _generateMethod(_MethodToGenerate element, String baseUrl) {
+  Method _generateMethod(_MethodToGenerate element, String servicePath) {
     final returnType = element.returnType;
     final methodType = element.restMethod.type;
+    final methodPath = element.restMethod.path;
     final headers = element.headers;
     final urlParam = element.url?.parameterName;
     final pathParameters = element.pathParameters;
@@ -56,19 +57,17 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
     final requestBody = element.body != null
         ? 'jsonEncode(${element.body.parameterName})'
         : null;
-    var servicePath = '';
-    if (baseUrl != null && baseUrl.isNotEmpty) {
-      servicePath = '$baseUrl/';
+    var path = '';
+    if (servicePath != null && servicePath.isNotEmpty) {
+      path = '/$servicePath';
+    }
+    if (methodPath != null && methodPath.isNotEmpty) {
+      path = path + '/$methodPath';
     }
     final block = Block.of([
-      Code("""
-      var _url = '\${_client.baseUrl}/$servicePath' + '${element.restMethod.path}';"""),
+      Code("var _url = '\${_client.baseUrl}$path';"),
       if (urlParam != null) Code("""
-      if ($urlParam.startsWith(RegExp('https?://'))) {
-        _url = $urlParam;
-      } else {
-        _url = _url + '/\$$urlParam';
-      }"""),
+      _url = $urlParam.startsWith(RegExp('https?://')) ? $urlParam : '\$_url/\$$urlParam';"""),
       if (urlParam == null && pathParameters.isNotEmpty) Code("""
       final _pathParameters = $pathParameters;
       _pathParameters.forEach((k, v) => _url = _url.replaceFirst('{\$k}', v));"""),
@@ -95,7 +94,7 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
     return method;
   }
 
-  String _parseBaseUrl(ConstantReader annotation) =>
+  String _parseServicePath(ConstantReader annotation) =>
       annotation.peek('path').stringValue;
 
   _RestMethod _parseRestMethod(MethodElement element) {
