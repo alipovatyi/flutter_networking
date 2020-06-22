@@ -87,7 +87,8 @@ class RestGenerator extends GeneratorForAnnotation<ApiService> {
     final method = Method((m) {
       m.annotations.add(CodeExpression(Code('override')));
       m.name = element.name;
-      m.requiredParameters.addAll(element.parameters);
+      m.requiredParameters.addAll(element.parameters.where((e) => !e.named));
+      m.optionalParameters.addAll(element.parameters.where((e) => e.named));
       m.modifier = MethodModifier.async;
       m.body = block;
     });
