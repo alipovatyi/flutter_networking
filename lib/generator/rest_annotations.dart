@@ -14,15 +14,15 @@ abstract class RestMethod {
 }
 
 class GET extends RestMethod {
-  const GET(String path) : super('GET', path);
+  const GET({String path = ''}) : super('GET', path);
 }
 
 class POST extends RestMethod {
-  const POST(String path) : super('POST', path);
+  const POST({String path = ''}) : super('POST', path);
 }
 
 class PUT extends RestMethod {
-  const PUT(String path) : super('PUT', path);
+  const PUT({String path = ''}) : super('PUT', path);
 }
 
 class Headers {
