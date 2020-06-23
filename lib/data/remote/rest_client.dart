@@ -29,10 +29,14 @@ class RestClient {
 
   Future<Response> send(Request request) async {
     request.headers.addAll(_defaultHeaders);
-    _requestInterceptors.forEach((i) => i.intercept(request));
-    final streamedResponse = await _client.send(request);
+    final streamedResponse = await _client.send(_interceptRequest(request));
     final response = await Response.fromStream(streamedResponse);
-    _responseInterceptors.forEach((i) => i.intercept(response));
-    return response;
+    return _interceptResponse(response);
   }
+
+  Request _interceptRequest(Request request) =>
+      _requestInterceptors.fold(request, (req, int) => int.intercept(req));
+
+  Response _interceptResponse(Response response) =>
+      _responseInterceptors.fold(response, (res, int) => int.intercept(res));
 }

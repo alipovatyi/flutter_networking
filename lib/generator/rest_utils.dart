@@ -37,7 +37,7 @@ Request $createRequest({
   String body,
 }) {
   final request = Request(method, uri);
-  request.headers.addEntries(headers.entries);
+  request.headers.addAll(headers);
   if (body != null) {
     request.body = body;
   }
